@@ -85,47 +85,63 @@ export class CacheService {
 export interface CacheItem {
   value: any;
   expiresAt: number;
+  expired: boolean;
 }
 ``}
-
-// src/app/event-reminder/event-reminder.module.ts
 ```typescript
-// ...
+// src/utils/cache-item.interface.ts
+export interface CacheItem {
+  value: any;
+  expiresAt: number;
+  expired: boolean;
+}
+``}
+```typescript
+// src/app/event-reminder/event-reminder.module.ts (update)
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { EventReminderComponent } from './event-reminder.component';
 import { CacheService } from '../utils/cache';
 
 @NgModule({
-  // ...
+  declarations: [EventReminderComponent],
+  imports: [CommonModule],
   providers: [CacheService],
 })
 export class EventReminderModule {}
 ``}
-
-// src/app/event-schedule/event-schedule.module.ts
 ```typescript
-// ...
+// src/app/event-schedule/event-schedule.module.ts (update)
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { EventScheduleComponent } from './event-schedule.component';
 import { CacheService } from '../utils/cache';
 
 @NgModule({
-  // ...
+  declarations: [EventScheduleComponent],
+  imports: [CommonModule],
   providers: [CacheService],
 })
 export class EventScheduleModule {}
 ``}
-
-// src/utils/helpers.ts
 ```typescript
-// ...
+// src/utils/helpers.ts (update)
 import { CacheService } from './cache';
 
 export function getEventReminder(eventId: string): any {
-  const cacheService = new CacheService();
-  const cachedReminder = cacheService.get(`event-reminder-${eventId}`);
+  const cache = new CacheService();
+  const cachedReminder = cache.get(`event-reminder-${eventId}`);
   if (cachedReminder) {
     return cachedReminder;
   }
   // fetch event reminder from API
   const reminder = fetchEventReminderFromAPI(eventId);
-  cacheService.set(`event-reminder-${eventId}`, reminder);
+  cache.set(`event-reminder-${eventId}`, reminder);
   return reminder;
+}
+
+function fetchEventReminderFromAPI(eventId: string): any {
+  // simulate API call
+  return { eventId, reminder: 'Reminder for event ' + eventId };
 }
 ``}
