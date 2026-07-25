@@ -3,43 +3,42 @@ import { Injectable } from '@angular/core';
 import { CacheItem } from './cache-item.interface';
 
 interface CacheConfig {
-  ttl: number; // time to live in milliseconds
+  ttl: number; // time to live in seconds
 }
 
-const DEFAULT_TTL = 60 * 1000; // 1 minute
+const DEFAULT_TTL = 60; // 1 minute
 
 class Cache {
-  private cache: Map<string, CacheItem>;
+  private cache: { [key: string]: CacheItem } = {};
   private config: CacheConfig;
 
   constructor(config: CacheConfig = { ttl: DEFAULT_TTL }) {
-    this.cache = new Map();
     this.config = config;
   }
 
   get(key: string): any {
-    const item = this.cache.get(key);
+    const item = this.cache[key];
     if (!item) {
       return null;
     }
     if (item.expiration < Date.now()) {
-      this.cache.delete(key);
+      delete this.cache[key];
       return null;
     }
     return item.value;
   }
 
   set(key: string, value: any): void {
-    const expiration = Date.now() + this.config.ttl;
-    this.cache.set(key, { value, expiration });
+    const expiration = Date.now() + this.config.ttl * 1000;
+    this.cache[key] = { value, expiration };
   }
 
   delete(key: string): void {
-    this.cache.delete(key);
+    delete this.cache[key];
   }
 
   clear(): void {
-    this.cache.clear();
+    this.cache = {};
   }
 }
 
@@ -57,41 +56,63 @@ export class CacheService {
     return this.cache;
   }
 
-  setTTL(ttl: number): void {
-    this.cache = new Cache({ ttl });
+  getConfig(): CacheConfig {
+    return this.cache.config;
+  }
+
+  setConfig(config: CacheConfig): void {
+    this.cache.config = config;
   }
 }
 
-// Example usage:
-// const cacheService = new CacheService();
-// cacheService.getCache().set('apiResponse', { data: 'example data' });
-// const cachedResponse = cacheService.getCache().get('apiResponse');
-// console.log(cachedResponse); // { data: 'example data' }
+export interface CacheItem {
+  value: any;
+  expiration: number;
+}
+``}
 
-// src/app/event-reminder/event-reminder.module.ts
-// import { CacheService } from '../utils/cache';
-// @NgModule({
-//   ...
-//   providers: [CacheService],
-// })
-// export class EventReminderModule {}
+// src/utils/cache-item.interface.ts
+```typescript
+// src/utils/cache-item.interface.ts
+export interface CacheItem {
+  value: any;
+  expiration: number;
+}
+``}
 
-// src/services/event.service.ts
-// import { CacheService } from '../utils/cache';
-// @Injectable({
-//   providedIn: 'root',
-// })
-// export class EventService {
-//   constructor(private cacheService: CacheService) {}
-//   getEvents(): Observable<any> {
-//     const cachedResponse = this.cacheService.getCache().get('events');
-//     if (cachedResponse) {
-//       return of(cachedResponse);
-//     }
-//     return this.http.get('https://example.com/api/events').pipe(
-//       tap((response) => {
-//         this.cacheService.getCache().set('events', response);
-//       }),
-//     );
-//   }
-// }
+// src/app/event-schedule/event-schedule.module.ts (example usage)
+```typescript
+// src/app/event-schedule/event-schedule.module.ts
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { EventScheduleComponent } from './event-schedule.component';
+import { CacheService } from '../utils/cache';
+
+@NgModule({
+  declarations: [EventScheduleComponent],
+  imports: [CommonModule],
+  providers: [CacheService],
+})
+export class EventScheduleModule {}
+``}
+
+// src/app/event-schedule/event-schedule.component.ts (example usage)
+```typescript
+// src/app/event-schedule/event-schedule.component.ts
+import { Component, OnInit } from '@angular/core';
+import { CacheService } from '../utils/cache';
+
+@Component({
+  selector: 'app-event-schedule',
+  template: '<p>Event Schedule</p>',
+})
+export class EventScheduleComponent implements OnInit {
+  constructor(private cacheService: CacheService) {}
+
+  ngOnInit(): void {
+    const cache = this.cacheService.getCache();
+    cache.set('eventSchedule', 'some data');
+    console.log(cache.get('eventSchedule')); // outputs: some data
+  }
+}
+``}
